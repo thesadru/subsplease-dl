@@ -6,8 +6,8 @@ import random
 import shlex
 import threading
 import time
-from typing import Any, BinaryIO, Generic, Optional, TypeVar, overload
 import warnings
+from typing import Any, BinaryIO, Generic, Optional, TypeVar, overload
 
 import irc.client
 from tqdm import tqdm
@@ -28,7 +28,9 @@ class XDCCFile(Generic[BinaryIOType]):
         self.filename = filename
         self.size = size
         self.stream = stream or io.BytesIO()
-        self._tqdm = tqdm(desc=self.filename, total=self.size, unit="B", unit_scale=True)
+        self._tqdm = tqdm(
+            desc=self.filename, total=self.size, unit="B", unit_scale=True
+        )
 
     def _write(self, data: bytes) -> None:
         self.stream.write(data)
@@ -107,7 +109,7 @@ class XDCC(irc.client.SimpleIRCClient):
             stream = self.__stream
 
         self.file: XDCCFile[Any] = XDCCFile(filename, int(size), stream)
-        
+
         try:
             peer_address = irc.client.ip_numstr_to_quad(peer_address)
             peer_port = int(peer_port)
@@ -116,7 +118,6 @@ class XDCC(irc.client.SimpleIRCClient):
             self.dl_lock.release()
             warnings.warn(f"Cannot connect to bot, got invalid ip: {e}", Warning)
             return
-        
 
     def on_dccmsg(self, connection, event):
         """Receive a DCC msg block from the bot and write it to the current file
@@ -172,7 +173,9 @@ class XDCC(irc.client.SimpleIRCClient):
 
         return self.file
 
-    def connect(self, server: str = "irc.rizon.net", port: int = 6670, nickname: str = None):
+    def connect(
+        self, server: str = "irc.rizon.net", port: int = 6670, nickname: str = None
+    ):
         """Connects to the icp server"""
         nickname = nickname or "".join(random.choices("anonymous", k=9))
 

@@ -1,2 +1,8 @@
+# Python
+**__pycache__/
+
+# Poetry
+dist/
+
+# Other
 *.mkv
-__pycache__

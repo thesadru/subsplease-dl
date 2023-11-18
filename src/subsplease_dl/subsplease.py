@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import difflib
-from functools import partial
 import logging
 import os
 import re
@@ -9,9 +8,10 @@ import tempfile
 import time
 import warnings
 from concurrent.futures import ThreadPoolExecutor
+from functools import partial
 from typing import BinaryIO, Iterator, List, Union
 
-from xdcc import XDCC, logger
+from subsplease_dl.xdcc import XDCC, logger  # noqa: F401
 
 logging.basicConfig(level=logging.INFO)
 # logger.setLevel(logging.DEBUG)
@@ -28,7 +28,9 @@ BOTS = [
 
 
 FILENAME_RE = r"(\[(\w+)\] (.+?)(?: - (.+?))? [\[\(](\w+)[\]\)].*\.\w+)"  # filename, group, title, ep, res
-LISTFILE_RE = r"#(\d+) +(\d+)x +\[([\d\. ]+)(\w)] " + FILENAME_RE  # id, dl, size, size_u
+LISTFILE_RE = (
+    r"#(\d+) +(\d+)x +\[([\d\. ]+)(\w)] " + FILENAME_RE
+)  # id, dl, size, size_u
 
 
 class ListFile:
@@ -41,7 +43,7 @@ class ListFile:
     episode: str
     resolution: str
 
-    def __init__(self, string: str, bot: str = '') -> None:
+    def __init__(self, string: str, bot: str = "") -> None:
         self.raw = string
 
         match = re.match(LISTFILE_RE, string)
@@ -52,21 +54,25 @@ class ListFile:
         id, dl, size, size_u, filename, group, title, ep, res = match.groups("")
         self.id = int(id)
         self.downloads = int(dl)
-        size = float(size) * {"B": 1, "K": 0x400, "M": 0x100000, "G": 0x40000000}[size_u]
+        size = (
+            float(size) * {"B": 1, "K": 0x400, "M": 0x100000, "G": 0x40000000}[size_u]
+        )
         self.size = int(size)
         self.filename = filename
         self.group = group
         self.title = title
         self.episode = ep
         self.resolution = res
-        
+
         self.bot = bot
 
     def __str__(self) -> str:
         return self.raw
 
     def __repr__(self) -> str:
-        args = ", ".join(f"{k}={v!r}" for k, v in self.__dict__.items() if k != "raw" and v)
+        args = ", ".join(
+            f"{k}={v!r}" for k, v in self.__dict__.items() if k != "raw" and v
+        )
         return f"{type(self).__name__}({args})"
 
 
@@ -85,7 +91,11 @@ class SubsPleaseXDCC(XDCC):
     def list_files(self) -> List[ListFile]:
         """List all files that you can download"""
         filename = self._get_list_cache()
-        if os.path.exists(filename) and time.time() - os.path.getmtime(filename) <= 86400 and os.path.getsize(filename) >= 0x1000:
+        if (
+            os.path.exists(filename)
+            and time.time() - os.path.getmtime(filename) <= 86400
+            and os.path.getsize(filename) >= 0x1000
+        ):
             with open(filename) as file:
                 data = file.read()
         else:
@@ -106,7 +116,11 @@ class SubsPleaseXDCC(XDCC):
     def search(self, title: str, cutoff: float = 0.6) -> List[ListFile]:
         """Search all animes by name"""
         files = self.list_files()
-        matches = set(difflib.get_close_matches(title, {i.title for i in files}, n=8, cutoff=cutoff))
+        matches = set(
+            difflib.get_close_matches(
+                title, {i.title for i in files}, n=8, cutoff=cutoff
+            )
+        )
         if matches:
             return [i for i in files if i.title in matches]
         return []
@@ -116,14 +130,17 @@ def list_files(bot: str) -> List[ListFile]:
     with SubsPleaseXDCC(bot) as client:
         return client.list_files()
 
+
 def list_all_files() -> Iterator[ListFile]:
     with ThreadPoolExecutor() as e:
         for files in e.map(list_files, BOTS):
             yield from files
 
+
 def search(bot: str, title: str, cutoff: float = 0.6) -> List[ListFile]:
     with SubsPleaseXDCC(bot) as client:
         return client.search(title, cutoff)
+
 
 def search_all(title: str, cutoff: float = 0.6) -> Iterator[ListFile]:
     with ThreadPoolExecutor() as e:
