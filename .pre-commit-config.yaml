@@ -1,0 +1,36 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+-   repo: local
+    hooks:
+        -   id: poetry-check
+            name: poetry-check
+            description: run poetry check to validate config
+            entry: poetry check
+            language: python
+            pass_filenames: false
+            files: ^(.*/)?pyproject.toml$
+    
+        -   id: ruff-sort
+            name: ruff-sort
+            description: run ruff to sort code
+            entry: poetry run ruff
+            args: ["check", "--select", "I", "--fix", "."]
+            language: system
+            types: [python]
+    
+        -   id: ruff-format
+            name: ruff-format
+            description: run ruff to format code
+            entry: poetry run ruff
+            args: ["format", "."]
+            language: system
+            types: [python]
+    
+        -   id: ruff-check
+            name: ruff-check
+            description: run ruff to lint code
+            entry: poetry run ruff
+            args: ["check", "."]
+            language: system
+            types: [python]
